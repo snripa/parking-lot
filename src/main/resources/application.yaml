@@ -1,0 +1,18 @@
+parking:
+  name: MK
+  pricing:
+    hourlyRate: 3.5
+    currency: EUR
+  slots:
+    GASOLINE: 10
+    ELECTRIC_20KW: 10
+    ELECTRIC_50KW: 10
+spring:
+  jpa:
+    database: h2
+    hibernate:
+      dialect: org.hibernate.dialect.H2Dialect
+      ddl-auto: create-drop
+springdoc:
+  swagger-ui:
+    path: /specs
