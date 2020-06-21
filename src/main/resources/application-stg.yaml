@@ -1,6 +1,7 @@
 parking:
   name: MK_STAGING
   pricing:
+    policy: SIMPLE
     hourlyRate: 3.85
     currency: EUR
   slots:

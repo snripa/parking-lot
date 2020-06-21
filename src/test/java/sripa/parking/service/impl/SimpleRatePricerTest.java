@@ -15,7 +15,7 @@ import sripa.parking.config.ParkingSlotsConfig.PricingConfig;
 import sripa.parking.exceptions.PricingException;
 import sripa.parking.service.PricingService;
 
-class SimplePricingServiceTest {
+class SimpleRatePricerTest {
 
   private static final String CURRENCY = "TEST";
   private static final Float RATE = 1F;
@@ -23,8 +23,8 @@ class SimplePricingServiceTest {
 
   @BeforeEach
   void setUp() {
-    pricingService = new SimplePricingService(
-        new ParkingSlotsConfig(emptyMap(), "", new PricingConfig(CURRENCY, RATE)));
+    pricingService = new SimpleRatePricer(
+        new ParkingSlotsConfig(emptyMap(), "", new PricingConfig(CURRENCY, RATE, null)));
   }
 
   @Test
@@ -37,11 +37,11 @@ class SimplePricingServiceTest {
     final Price price = pricingService.price(timeSpent, PowerSupply.GASOLINE);
 
     // Then:
-    assertEquals(BigDecimal.valueOf((hours + 1) * RATE), price.getAmount());
+    assertEquals(BigDecimal.valueOf((hours) * RATE), price.getAmount());
   }
 
   @Test
-  void shouldChargeForZeroHours() {
+  void shouldNotChargeForZeroHours() {
     // Given
     int hours = 0;
     Long timeSpent = Duration.ofHours(hours).toMillis();
@@ -50,7 +50,7 @@ class SimplePricingServiceTest {
     final Price price = pricingService.price(timeSpent, PowerSupply.GASOLINE);
 
     // Then:
-    assertEquals(BigDecimal.valueOf(RATE), price.getAmount());
+    assertEquals(BigDecimal.valueOf(0F), price.getAmount());
   }
 
   @Test

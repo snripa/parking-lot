@@ -100,6 +100,7 @@ class PersistentParkingServiceTest {
     slot.setType(AVAILABLE_TYPE);
     ticket.setSlot(slot);
     when(ticketsRepository.findById(any())).thenReturn(Optional.of(ticket));
+    when(ticketsRepository.save(any())).thenReturn(ticket);
     when(pricingService.price(any(), any())).thenReturn(price);
 
     // When

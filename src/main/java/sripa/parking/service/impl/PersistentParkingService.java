@@ -52,6 +52,7 @@ public class PersistentParkingService implements ParkingService {
 
   @PostConstruct
   private void init() {
+    log.info("Initializing storage with available parking slots: {} ", slots);
     slots.entrySet()
         .stream()
         .filter(e -> PowerSupply.contains(e.getKey()))
@@ -65,13 +66,14 @@ public class PersistentParkingService implements ParkingService {
             this.slotRepository.save(slot);
           });
         });
-    log.info("Persistent Parking service started to serve parking {} with initial capacity {}",
+    log.info("Persistent Parking service {} started  with initial capacity {}",
         name, slots);
   }
 
 
   @Override
   public Ticket takeSlot(VehicleRequest vehicle) {
+    log.info("Attempt to reserve slot for {}", vehicle);
     // have to synchronize slots repository access
     ParkingSlot availableSlot;
     synchronized (this) {
@@ -84,6 +86,7 @@ public class PersistentParkingService implements ParkingService {
       // Mark it as taken and save to db
       availableSlot.setTaken(true);
       slotRepository.save(availableSlot);
+      log.info("Slot taken: {}", availableSlot);
     }
     // Create ticket with checkIn/slot/vehicle assigned
     var persistVehicle = new Vehicle();
@@ -94,14 +97,21 @@ public class PersistentParkingService implements ParkingService {
     ticket.setSlot(availableSlot);
     ticket.setVehicle(persistVehicle);
     // And save to db
-    return ticketsRepository.save(ticket);
+    final Ticket savedTicket = ticketsRepository.save(ticket);
+    log.info("Ticket created: {}. Parking slot {} is taken", ticket.getId(), ticket.getSlot());
+    return savedTicket;
   }
 
   @Override
   public Ticket freeSlot(Long ticketId) {
     // Check if ticket id is valid and not payed yet
     var ticketOptional = ticketsRepository.findById(ticketId);
-    if (ticketOptional.isEmpty() || ticketOptional.get().getCheckOut() != null) {
+    if (ticketOptional.isEmpty()) {
+      log.warn("Ticket {} doesn't exist in system", ticketId);
+      throw new InvalidTicketException(ticketId);
+    }
+    if (ticketOptional.get().getCheckOut() != null) {
+      log.warn("Ticket {} was already finalized", ticketId);
       throw new InvalidTicketException(ticketId);
     }
 
@@ -116,11 +126,15 @@ public class PersistentParkingService implements ParkingService {
     tkt.setCheckOut(checkOut);
     tkt.setPrice(price);
     tkt.getSlot().setTaken(false);
-    return ticketsRepository.save(tkt);
+    final Ticket savedTicket = ticketsRepository.save(tkt);
+    log.info("Checking out for ticket {} complete. Slot {} is free now", savedTicket.getId(),
+        savedTicket.getSlot().getId());
+    return savedTicket;
   }
 
   @Override
   public Map<PowerSupply, Integer> availableSlots() {
+    log.info("Counting available slots...");
     final List<ParkingSlot> freeSlots = slotRepository.findByTaken(false);
     // count places and return in map
     var map = freeSlots.stream().collect(Collectors.groupingBy(ParkingSlot::getType));
@@ -129,6 +143,7 @@ public class PersistentParkingService implements ParkingService {
     // fill with zero-s missing types
     Arrays.stream(PowerSupply.values()).filter(t -> !result.containsKey(t))
         .forEach(t -> result.put(t, 0));
+    log.info("Calculation complete");
     return result;
   }
 }

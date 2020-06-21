@@ -1,6 +1,8 @@
 parking:
   name: MK_DEVELOP
   pricing:
+    policy: FIXED
+    fixedRate: 5.5
     hourlyRate: 1.1
     currency: EUR
   slots:

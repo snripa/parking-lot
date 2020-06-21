@@ -73,7 +73,7 @@ public class IntegrationTest {
     actualSlots = availableSlots(vehicle.getType());
     assertEquals(slotsBefore, actualSlots, "Slot was not freed");
     assertNotNull(ticketAfter.getCheckOut(), "should checkout");
-    assertEquals(BigDecimal.valueOf(config.getPricing().getHourlyRate()),
+    assertEquals(BigDecimal.valueOf(0F),
         ticketAfter.getPrice().getAmount(),
         "should have charged for 1 hour");
   }

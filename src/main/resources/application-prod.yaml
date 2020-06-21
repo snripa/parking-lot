@@ -1,6 +1,7 @@
 parking:
   name: MK_PRODUCTION
   pricing:
+    policy: SIMPLE
     hourlyRate: 2.2
     currency: EUR
   slots:

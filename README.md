@@ -18,7 +18,7 @@ Technologies used:
  As the car leaves, the driver should be charged with amount according to the time spent at the slot.
  
  Pricing policy is flexible and can be defined by parking owner.
- Default model is - charge according to hourly rate and hours spent in parking. The first hour is not free.
+ Default model is SIMPLE - charge according to hourly rate and hours spent in parking. The first hour is free.
  
  # Building and running the application.
 

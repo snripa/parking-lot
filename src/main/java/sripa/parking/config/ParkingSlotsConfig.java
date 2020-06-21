@@ -40,7 +40,9 @@ public class ParkingSlotsConfig {
   @NoArgsConstructor
   public static class PricingConfig {
 
-    String currency;
-    Float hourlyRate;
+    private String currency;
+    private Float hourlyRate;
+    private Float fixedRate;
+
   }
 }
