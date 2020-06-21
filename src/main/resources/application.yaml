@@ -1,5 +1,5 @@
 parking:
-  name: MK
+  name: MK_DEV
   pricing:
     hourlyRate: 3.5
     currency: EUR

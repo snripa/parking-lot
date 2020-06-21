@@ -1,0 +1,9 @@
+parking:
+  name: MK_PRODUCTION
+  pricing:
+    hourlyRate: 2.2
+    currency: EUR
+  slots:
+    GASOLINE: 30
+    ELECTRIC_20KW: 10
+    ELECTRIC_50KW: 5
