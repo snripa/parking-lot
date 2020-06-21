@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import sripa.parking.api.data.PowerSupply;
 import sripa.parking.api.data.Ticket;
 import sripa.parking.api.data.TicketId;
-import sripa.parking.api.data.Vehicle;
 import sripa.parking.api.data.VehicleRequest;
 import sripa.parking.service.ParkingService;
 
@@ -34,7 +34,7 @@ public class ParkingController {
   }
 
   @GetMapping(path = "/availableSlots", produces = "application/json")
-  public ResponseEntity<Map<String, Integer>> availableSlots() {
+  public ResponseEntity<Map<PowerSupply, Integer>> availableSlots() {
     return ResponseEntity.ok(parkingService.availableSlots());
   }
 }

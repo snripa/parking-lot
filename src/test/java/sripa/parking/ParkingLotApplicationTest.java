@@ -7,14 +7,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import sripa.parking.api.ParkingController;
 
 @SpringBootTest
-class SmokeTest {
+class ParkingLotApplicationTest {
 
-	@Autowired
-	private ParkingController controller;
+  @Autowired
+  private ParkingController controller;
 
-	@Test
-	void contextLoads() {
-		Assertions.assertNotNull(controller);
-	}
-
+  @Test
+  void contextLoads() {
+    Assertions.assertNotNull(controller);
+  }
 }

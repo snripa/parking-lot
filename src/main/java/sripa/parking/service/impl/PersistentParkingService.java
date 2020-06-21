@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.PostConstruct;
@@ -21,8 +22,8 @@ import sripa.parking.exceptions.InvalidTicketException;
 import sripa.parking.exceptions.NoSpaceException;
 import sripa.parking.repository.ParkingSlotRepository;
 import sripa.parking.repository.TicketsRepository;
-import sripa.parking.service.ParkingPricer;
 import sripa.parking.service.ParkingService;
+import sripa.parking.service.PricingService;
 
 /**
  * Implementation of {@link ParkingService} that takes care of persistency. State is saved in DB
@@ -35,17 +36,17 @@ public class PersistentParkingService implements ParkingService {
   private final ParkingSlotRepository slotRepository;
   private final TicketsRepository ticketsRepository;
   private final String name;
-  private final ParkingPricer pricer;
+  private final PricingService pricingService;
   private final Map<String, Integer> slots;
 
   @Autowired
   public PersistentParkingService(ParkingSlotRepository slotRepository,
       TicketsRepository ticketsRepository, ParkingSlotsConfig config,
-      ParkingPricer pricer) {
+      PricingService pricingService) {
     this.slotRepository = slotRepository;
     this.ticketsRepository = ticketsRepository;
     this.name = config.getName();
-    this.pricer = pricer;
+    this.pricingService = pricingService;
     this.slots = config.getSlots();
   }
 
@@ -106,26 +107,27 @@ public class PersistentParkingService implements ParkingService {
 
     // Mark the slot as free and save
     final var tkt = ticketOptional.get();
-    var slot = tkt.getSlot();
-    slot.setTaken(false);
-    slotRepository.save(slot);
     // Set price according to policy and save the ticket
     var checkOut = LocalDateTime.now();
-    long msTaken = tkt.getCheckIn().until(checkOut, ChronoUnit.MILLIS);
-    var price = pricer.price(msTaken, tkt.getSlot().getType());
+    long timeTakenMs = tkt.getCheckIn().until(checkOut, ChronoUnit.MILLIS);
+    var price = pricingService.price(timeTakenMs, tkt.getSlot().getType());
+
+    // save ticket back with updated fields (slot will be saved as well)
     tkt.setCheckOut(checkOut);
     tkt.setPrice(price);
+    tkt.getSlot().setTaken(false);
     return ticketsRepository.save(tkt);
   }
 
   @Override
-  public Map<String, Integer> availableSlots() {
+  public Map<PowerSupply, Integer> availableSlots() {
     final List<ParkingSlot> freeSlots = slotRepository.findByTaken(false);
     // count places and return in map
     var map = freeSlots.stream().collect(Collectors.groupingBy(ParkingSlot::getType));
-    final Map<String, Integer> result = map.entrySet().stream()
-        .collect(Collectors.toMap(e -> e.getKey().name(), e -> e.getValue().size()));
-    Arrays.stream(PowerSupply.values()).map(Enum::name).filter(t -> !result.containsKey(t))
+    final Map<PowerSupply, Integer> result = map.entrySet().stream()
+        .collect(Collectors.toMap(Entry::getKey, e -> e.getValue().size()));
+    // fill with zero-s missing types
+    Arrays.stream(PowerSupply.values()).filter(t -> !result.containsKey(t))
         .forEach(t -> result.put(t, 0));
     return result;
   }

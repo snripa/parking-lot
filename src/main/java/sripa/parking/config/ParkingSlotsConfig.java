@@ -1,7 +1,9 @@
 package sripa.parking.config;
 
 import java.util.Map;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
@@ -34,7 +36,10 @@ public class ParkingSlotsConfig {
   }
 
   @Data
+  @AllArgsConstructor
+  @NoArgsConstructor
   public static class PricingConfig {
+
     String currency;
     Float hourlyRate;
   }

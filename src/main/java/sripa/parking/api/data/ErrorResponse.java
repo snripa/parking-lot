@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class ErrorResponse {
-    private Integer code;
-    private String message;
+
+  private Integer code;
+  private String message;
 }

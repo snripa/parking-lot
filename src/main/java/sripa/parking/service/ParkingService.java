@@ -1,6 +1,7 @@
 package sripa.parking.service;
 
 import java.util.Map;
+import sripa.parking.api.data.PowerSupply;
 import sripa.parking.api.data.Ticket;
 import sripa.parking.api.data.VehicleRequest;
 
@@ -12,9 +13,9 @@ public interface ParkingService {
   /**
    * Queries the parking slot for the vehicle
    *
+   * @param vehicle vehicle to park
    * @return ticket with initial fields setup if there is place available at parking
    * @throws sripa.parking.exceptions.NoSpaceException if no parking slot available
-   * @param vehicle vehicle to park
    */
   Ticket takeSlot(VehicleRequest vehicle);
 
@@ -32,5 +33,5 @@ public interface ParkingService {
    *
    * @return mapping slot type -> available slots left
    */
-  Map<String, Integer> availableSlots();
+  Map<PowerSupply, Integer> availableSlots();
 }

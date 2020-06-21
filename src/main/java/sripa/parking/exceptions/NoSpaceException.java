@@ -7,7 +7,7 @@ import sripa.parking.api.data.PowerSupply;
  */
 public class NoSpaceException extends ParkingException {
 
-  public static final int CODE = 400;
+  public static final int CODE = 4005;
   private static final String ERR_MSG_FMT = "No available spot for cars with power supply %s";
 
   public NoSpaceException(PowerSupply type) {

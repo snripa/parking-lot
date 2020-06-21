@@ -20,7 +20,7 @@ public class Ticket {
   private LocalDateTime checkOut;
   @OneToOne(cascade = CascadeType.ALL)
   private Price price;
-  @OneToOne
+  @OneToOne(cascade = CascadeType.ALL)
   private ParkingSlot slot;
   @OneToOne(cascade = CascadeType.ALL)
   private Vehicle vehicle;
