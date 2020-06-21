@@ -1,0 +1,9 @@
+parking:
+  name: MK_DEVELOP
+  pricing:
+    hourlyRate: 1.1
+    currency: EUR
+  slots:
+    GASOLINE: 1
+    ELECTRIC_20KW: 1
+    ELECTRIC_50KW: 1
