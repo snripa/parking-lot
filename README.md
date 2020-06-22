@@ -14,19 +14,29 @@ Technologies used:
   * Slots for electric cars with 20 KW power outlet
   * Slots for electric cars with 50 KW power outlet
  
- As the car enters the parking, it receives a ticket with parking slot location.
- As the car leaves, the driver should be charged with amount according to the time spent at the slot.
+ As the car enters the parking, driver receives the ticket with parking slot location.
+ As the car leaves, the driver should be charged with some amount according to the time spent at the slot.
  
  Pricing policy is flexible and can be defined by parking owner.
- Default model is SIMPLE - charge according to hourly rate and hours spent in parking. The first hour is free.
+ Currently, supported charging policies are:
+ 
+  * SIMPLE - first hour is free, then rate x hours
+  * FIXED  - first hour costs fixed price, then rate x hours
+ 
+ Default model is SIMPLE
  
  # Building and running the application.
-
  
 ## Prerequisites
  
-  * Java 11,
+  * Java 11
   * Maven 3+
+  * git
+  
+```
+git clone git@github.com:snripa/parking-lot.git
+cd parking-lot
+```
  
  ### Build the application
  ```
@@ -59,3 +69,25 @@ After the start, application should be available:
 
  * Documentation: http://localhost:8080/specs
  * API: http://localhost:8080
+
+ # Configuration
+ Configuration is provided by standard Spring Boot application-[profile] means. 
+ Parking specific config:
+ 
+ ```
+parking:
+  name: MK_DEFAULT
+  pricing:
+    policy: SIMPLE
+    fixedRate: 1.5
+    hourlyRate: 3.5
+    currency: EUR
+  slots:
+    GASOLINE: 10
+    ELECTRIC_20KW: 10
+    ELECTRIC_50KW: 10
+```
+
+* policy - pricing policy. Should be in `[SIMPLE / FIXED]`
+* fixedRate - fixed price to pay regardless the parking duration (only for `FIXED` policy)
+* slots - types of parking slots with initial capacity. Should be in `[GASOLINE / ELECTRIC_20KW / ELECTRIC_50KW]`

@@ -2,7 +2,7 @@ parking:
   name: MK_DEFAULT
   pricing:
     policy: SIMPLE
-    fisedRate: 1.5
+    fixedRate: 1.5
     hourlyRate: 3.5
     currency: EUR
   slots:
