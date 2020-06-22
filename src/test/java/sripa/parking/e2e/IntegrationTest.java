@@ -22,7 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import sripa.parking.api.data.PowerSupply;
 import sripa.parking.api.data.Ticket;
 import sripa.parking.api.data.TicketId;
-import sripa.parking.api.data.VehicleRequest;
+import sripa.parking.api.data.Vehicle;
 import sripa.parking.config.ParkingSlotsConfig;
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
@@ -49,7 +49,7 @@ public class IntegrationTest {
   @Test
   void shouldTakeAndFreeSlot() {
     // Given:
-    var vehicle = new VehicleRequest("AB-123-CD", PowerSupply.GASOLINE);
+    var vehicle = new Vehicle("AB-123-CD", PowerSupply.GASOLINE);
     var slotsBefore = initialSlots.get(vehicle.getPowerSupply());
 
     // When: take slot success
@@ -94,7 +94,7 @@ public class IntegrationTest {
   @Test
   void shouldFailPayedTicket() {
     // Given: get used ticket
-    var ticket = takeSlot(new VehicleRequest("asd", PowerSupply.ELECTRIC_50KW)).getBody();
+    var ticket = takeSlot(new Vehicle("asd", PowerSupply.ELECTRIC_50KW)).getBody();
     freeSlot(new TicketId(ticket.getId()));
 
     // When: free same spot again
@@ -111,17 +111,17 @@ public class IntegrationTest {
     var type = PowerSupply.ELECTRIC_20KW;
     // GASOLINE slots are also available for electric cars
     var available = availableSlots(PowerSupply.ELECTRIC_20KW)  + availableSlots(PowerSupply.GASOLINE);
-    IntStream.range(0, available).forEach(i -> takeSlot(new VehicleRequest("1234-" + i, type)));
+    IntStream.range(0, available).forEach(i -> takeSlot(new Vehicle("1234-" + i, type)));
 
     // When: take slot success
-    var response = takeSlot(new VehicleRequest("ABC", type));
+    var response = takeSlot(new Vehicle("ABC", type));
 
     // Then: check slots number after taking slot and ticket
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode(),
         "should have received bad request for unavailable parking slot");
   }
 
-  private ResponseEntity<Ticket> takeSlot(VehicleRequest vehicle) {
+  private ResponseEntity<Ticket> takeSlot(Vehicle vehicle) {
     return restTemplate
         .postForEntity("/takeSlot", vehicle, Ticket.class);
   }

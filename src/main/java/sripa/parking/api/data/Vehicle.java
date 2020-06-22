@@ -5,9 +5,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
+@NoArgsConstructor
 public class Vehicle {
 
   @Id
@@ -15,4 +17,9 @@ public class Vehicle {
   private Long id;
   private String plates;
   private PowerSupply powerSupply;
+
+  public Vehicle(String plates, PowerSupply powerSupply) {
+    this.plates = plates;
+    this.powerSupply = powerSupply;
+  }
 }

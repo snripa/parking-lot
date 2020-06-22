@@ -1,7 +1,5 @@
 package sripa.parking.service.impl;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -13,15 +11,12 @@ import sripa.parking.api.data.ParkingSlot;
 import sripa.parking.api.data.PowerSupply;
 import sripa.parking.api.data.Ticket;
 import sripa.parking.api.data.Vehicle;
-import sripa.parking.api.data.VehicleRequest;
 import sripa.parking.config.ParkingSlotsConfig;
-import sripa.parking.exceptions.InvalidTicketException;
 import sripa.parking.exceptions.NoSpaceException;
 import sripa.parking.exceptions.UnsupportedSlotTypeException;
 import sripa.parking.repository.ParkingSlotRepository;
-import sripa.parking.repository.TicketsRepository;
 import sripa.parking.service.ParkingService;
-import sripa.parking.service.PricingService;
+import sripa.parking.service.TicketingService;
 
 /**
  * Implementation of {@link ParkingService} that takes care of persistency. State is saved in DB
@@ -32,20 +27,18 @@ import sripa.parking.service.PricingService;
 public class PersistentParkingService implements ParkingService {
 
   private final ParkingSlotRepository slotRepository;
-  private final TicketsRepository ticketsRepository;
   private final String name;
-  private final PricingService pricingService;
+  private final TicketingService ticketingService;
   private final Map<String, Integer> slots;
 
   @Autowired
   public PersistentParkingService(ParkingSlotRepository slotRepository,
-      TicketsRepository ticketsRepository, ParkingSlotsConfig config,
-      PricingService pricingService) {
+      ParkingSlotsConfig config,
+      TicketingService ticketingService) {
     this.slotRepository = slotRepository;
-    this.ticketsRepository = ticketsRepository;
     this.name = config.getName();
-    this.pricingService = pricingService;
     this.slots = config.getSlots();
+    this.ticketingService = ticketingService;
   }
 
   @PostConstruct
@@ -69,73 +62,34 @@ public class PersistentParkingService implements ParkingService {
   }
 
   @Override
-  public Ticket takeSlot(VehicleRequest vehicle) {
+  public Ticket takeSlot(Vehicle vehicle) {
     log.info("Attempt to reserve slot for {}", vehicle);
-    // have to synchronize slots repository access
 
     Optional<ParkingSlot> optSlot;
     ParkingSlot availableSlot;
+    // have to synchronize access to slots repository
     synchronized (this) {
       // First find available slot of given type
       if (vehicle.getPowerSupply() == null || vehicle.getPowerSupply() == PowerSupply.GASOLINE) {
-        optSlot = slotRepository
-            .findFirstByPowerSupplyAndTaken(PowerSupply.GASOLINE, false);
+        optSlot = slotRepository.findFirstByPowerSupplyAndTaken(PowerSupply.GASOLINE, false);
       } else {
         optSlot = slotRepository
             .findFirstByPowerSupplyAndTaken(vehicle.getPowerSupply(), false)
             .or(() -> slotRepository.findFirstByPowerSupplyAndTaken(PowerSupply.GASOLINE, false));
       }
-
       // If no slot found - throw exception
-      availableSlot = optSlot
-          .orElseThrow(() -> new NoSpaceException(vehicle.getPowerSupply()));
-      // Mark it as taken and save to db
+      availableSlot = optSlot.orElseThrow(() -> new NoSpaceException(vehicle.getPowerSupply()));
+      // Mark slot as taken and save to db
       availableSlot.setTaken(true);
       slotRepository.save(availableSlot);
       log.info("Slot taken: {}", availableSlot);
     }
-    // Create ticket with checkIn/slot/vehicle assigned
+
+    // Create vehicle to save
     var persistVehicle = new Vehicle();
     persistVehicle.setPlates(vehicle.getPlates());
     persistVehicle.setPowerSupply(vehicle.getPowerSupply());
-    var ticket = new Ticket();
-    ticket.setCheckIn(LocalDateTime.now());
-    ticket.setSlot(availableSlot);
-    ticket.setVehicle(persistVehicle);
-    // And save to db
-    final Ticket savedTicket = ticketsRepository.save(ticket);
-    log.info("Ticket created: {}. Parking slot {} is taken", ticket.getId(), ticket.getSlot());
-    return savedTicket;
-  }
-
-  @Override
-  public Ticket freeSlot(Long ticketId) {
-    // Check if ticket id is valid and not payed yet
-    var ticketOptional = ticketsRepository.findById(ticketId);
-    if (ticketOptional.isEmpty()) {
-      log.warn("Ticket {} doesn't exist in system", ticketId);
-      throw new InvalidTicketException(ticketId);
-    }
-    if (ticketOptional.get().getCheckOut() != null) {
-      log.warn("Ticket {} was already finalized", ticketId);
-      throw new InvalidTicketException(ticketId);
-    }
-
-    // Mark the slot as free and save
-    final var tkt = ticketOptional.get();
-    // Set price according to policy and save the ticket
-    var checkOut = LocalDateTime.now();
-    long timeTakenMs = tkt.getCheckIn().until(checkOut, ChronoUnit.MILLIS);
-    var price = pricingService.price(timeTakenMs, tkt.getSlot().getPowerSupply());
-
-    // save ticket back with updated fields (slot will be saved as well)
-    tkt.setCheckOut(checkOut);
-    tkt.setPrice(price);
-    tkt.getSlot().setTaken(false);
-    final Ticket savedTicket = ticketsRepository.save(tkt);
-    log.info("Checking out for ticket {} complete. Slot {} is free now", savedTicket.getId(),
-        savedTicket.getSlot().getId());
-    return savedTicket;
+    return ticketingService.checkIn(persistVehicle, availableSlot);
   }
 
   @Override
