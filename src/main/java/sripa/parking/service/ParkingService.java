@@ -29,9 +29,10 @@ public interface ParkingService {
   Ticket freeSlot(Long ticketId);
 
   /**
-   * Get currently available slots by type
+   * Counts available slots of given type
    *
-   * @return mapping slot type -> available slots left
+   * @param powerSupply type of slots to count
+   * @return available places for given slot
    */
-  Map<PowerSupply, Integer> availableSlots();
+  Map<PowerSupply, Long> availableSlots(String powerSupply);
 }

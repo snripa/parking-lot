@@ -2,11 +2,8 @@ package sripa.parking.service.impl;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +17,7 @@ import sripa.parking.api.data.VehicleRequest;
 import sripa.parking.config.ParkingSlotsConfig;
 import sripa.parking.exceptions.InvalidTicketException;
 import sripa.parking.exceptions.NoSpaceException;
+import sripa.parking.exceptions.UnsupportedSlotTypeException;
 import sripa.parking.repository.ParkingSlotRepository;
 import sripa.parking.repository.TicketsRepository;
 import sripa.parking.service.ParkingService;
@@ -62,7 +60,7 @@ public class PersistentParkingService implements ParkingService {
           IntStream.range(0, capacity).forEach(i -> {
             var slot = new ParkingSlot();
             slot.setTaken(false);
-            slot.setType(PowerSupply.valueOf(type));
+            slot.setPowerSupply(PowerSupply.valueOf(type));
             this.slotRepository.save(slot);
           });
         });
@@ -70,19 +68,27 @@ public class PersistentParkingService implements ParkingService {
         name, slots);
   }
 
-
   @Override
   public Ticket takeSlot(VehicleRequest vehicle) {
     log.info("Attempt to reserve slot for {}", vehicle);
     // have to synchronize slots repository access
+
+    Optional<ParkingSlot> optSlot;
     ParkingSlot availableSlot;
     synchronized (this) {
       // First find available slot of given type
-      availableSlot = slotRepository
-          .findByTypeAndTaken(vehicle.getType(), false)
-          .stream()
-          .findFirst()
-          .orElseThrow(() -> new NoSpaceException(vehicle.getType()));
+      if (vehicle.getPowerSupply() == null || vehicle.getPowerSupply() == PowerSupply.GASOLINE) {
+        optSlot = slotRepository
+            .findFirstByPowerSupplyAndTaken(PowerSupply.GASOLINE, false);
+      } else {
+        optSlot = slotRepository
+            .findFirstByPowerSupplyAndTaken(vehicle.getPowerSupply(), false)
+            .or(() -> slotRepository.findFirstByPowerSupplyAndTaken(PowerSupply.GASOLINE, false));
+      }
+
+      // If no slot found - throw exception
+      availableSlot = optSlot
+          .orElseThrow(() -> new NoSpaceException(vehicle.getPowerSupply()));
       // Mark it as taken and save to db
       availableSlot.setTaken(true);
       slotRepository.save(availableSlot);
@@ -91,7 +97,7 @@ public class PersistentParkingService implements ParkingService {
     // Create ticket with checkIn/slot/vehicle assigned
     var persistVehicle = new Vehicle();
     persistVehicle.setPlates(vehicle.getPlates());
-    persistVehicle.setType(vehicle.getType());
+    persistVehicle.setPowerSupply(vehicle.getPowerSupply());
     var ticket = new Ticket();
     ticket.setCheckIn(LocalDateTime.now());
     ticket.setSlot(availableSlot);
@@ -120,7 +126,7 @@ public class PersistentParkingService implements ParkingService {
     // Set price according to policy and save the ticket
     var checkOut = LocalDateTime.now();
     long timeTakenMs = tkt.getCheckIn().until(checkOut, ChronoUnit.MILLIS);
-    var price = pricingService.price(timeTakenMs, tkt.getSlot().getType());
+    var price = pricingService.price(timeTakenMs, tkt.getSlot().getPowerSupply());
 
     // save ticket back with updated fields (slot will be saved as well)
     tkt.setCheckOut(checkOut);
@@ -133,17 +139,13 @@ public class PersistentParkingService implements ParkingService {
   }
 
   @Override
-  public Map<PowerSupply, Integer> availableSlots() {
+  public Map<PowerSupply, Long> availableSlots(String powerSupply) {
+    if (!PowerSupply.contains(powerSupply)) {
+      throw new UnsupportedSlotTypeException(powerSupply);
+    }
     log.info("Counting available slots...");
-    final List<ParkingSlot> freeSlots = slotRepository.findByTaken(false);
-    // count places and return in map
-    var map = freeSlots.stream().collect(Collectors.groupingBy(ParkingSlot::getType));
-    final Map<PowerSupply, Integer> result = map.entrySet().stream()
-        .collect(Collectors.toMap(Entry::getKey, e -> e.getValue().size()));
-    // fill with zero-s missing types
-    Arrays.stream(PowerSupply.values()).filter(t -> !result.containsKey(t))
-        .forEach(t -> result.put(t, 0));
+    var result = slotRepository.countByPowerSupplyAndTaken(PowerSupply.valueOf(powerSupply), false);
     log.info("Calculation complete");
-    return result;
+    return Map.of(PowerSupply.valueOf(powerSupply), result);
   }
 }

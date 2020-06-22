@@ -8,6 +8,6 @@ import lombok.Data;
 public class VehicleRequest {
 
   private String plates;
-  private PowerSupply type;
+  private PowerSupply powerSupply;
 
 }

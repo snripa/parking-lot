@@ -11,7 +11,7 @@ public enum PowerSupply {
       .map(Enum::name)
       .collect(Collectors.toSet());
 
-  public static boolean contains(String type) {
-    return lookup.contains(type);
+  public static boolean contains(String powerSupply) {
+    return lookup.contains(powerSupply);
   }
 }

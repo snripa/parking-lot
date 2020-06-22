@@ -4,6 +4,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,8 +34,9 @@ public class ParkingController {
     return ResponseEntity.ok(ticket);
   }
 
-  @GetMapping(path = "/availableSlots", produces = "application/json")
-  public ResponseEntity<Map<PowerSupply, Integer>> availableSlots() {
-    return ResponseEntity.ok(parkingService.availableSlots());
+  @GetMapping(path = "/availableSlots/{powerSupply}", produces = "application/json")
+  public ResponseEntity<Map<PowerSupply, Long>> availableSlots(
+      @PathVariable String powerSupply) {
+    return ResponseEntity.ok(parkingService.availableSlots(powerSupply));
   }
 }

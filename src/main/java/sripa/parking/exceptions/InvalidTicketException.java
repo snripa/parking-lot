@@ -5,7 +5,7 @@ package sripa.parking.exceptions;
  */
 public class InvalidTicketException extends ParkingException {
 
-  public static final int CODE = 4006;
+  public static final int CODE = ErrorCodes.INVALID_TICKET;
   private static final String ERR_MSG_FMT = "Failed to process ticket: %d";
 
   /**

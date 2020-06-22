@@ -2,7 +2,7 @@ package sripa.parking.exceptions;
 
 public class PricingException extends ParkingException {
 
-  public static final int CODE = 4007;
+  public static final int CODE = ErrorCodes.PRICING_FAILED;
   private static final String ERR_MSG_FMT = "Failed to calculate price";
 
   /**

@@ -50,7 +50,7 @@ public class IntegrationTest {
   void shouldTakeAndFreeSlot() {
     // Given:
     var vehicle = new VehicleRequest("AB-123-CD", PowerSupply.GASOLINE);
-    var slotsBefore = initialSlots.get(vehicle.getType());
+    var slotsBefore = initialSlots.get(vehicle.getPowerSupply());
 
     // When: take slot success
     var responseTake = takeSlot(vehicle);
@@ -59,7 +59,7 @@ public class IntegrationTest {
     assertNotNull(ticketBefore, "no response");
 
     // Then: check slots number after taking slot and ticket
-    var actualSlots = availableSlots(vehicle.getType());
+    var actualSlots = availableSlots(vehicle.getPowerSupply());
     assertEquals(slotsBefore - 1, actualSlots, "Didn't reserve slot");
     assertNull(ticketBefore.getCheckOut(), "should not checkout yet");
 
@@ -70,7 +70,7 @@ public class IntegrationTest {
     assertNotNull(ticketAfter, "no response");
 
     // Then:
-    actualSlots = availableSlots(vehicle.getType());
+    actualSlots = availableSlots(vehicle.getPowerSupply());
     assertEquals(slotsBefore, actualSlots, "Slot was not freed");
     assertNotNull(ticketAfter.getCheckOut(), "should checkout");
     assertEquals(BigDecimal.valueOf(0F),
@@ -80,7 +80,7 @@ public class IntegrationTest {
 
   @Test
   void shouldFailInvalidTicket() {
-    // Given: inavlid ticket
+    // Given: invalid ticket
     var ticketId = new TicketId(-5L);
 
     // When: try to checkout with invalid ticket
@@ -109,7 +109,8 @@ public class IntegrationTest {
   void shouldFailIfNoSpace() {
     // Given: take all slots
     var type = PowerSupply.ELECTRIC_20KW;
-    var available = availableSlots(type);
+    // GASOLINE slots are also available for electric cars
+    var available = availableSlots(PowerSupply.ELECTRIC_20KW)  + availableSlots(PowerSupply.GASOLINE);
     IntStream.range(0, available).forEach(i -> takeSlot(new VehicleRequest("1234-" + i, type)));
 
     // When: take slot success
@@ -131,10 +132,12 @@ public class IntegrationTest {
   }
 
   @SuppressWarnings("rawtypes")
-  private Integer availableSlots(PowerSupply type) {
+  private Integer availableSlots(PowerSupply powerSupply) {
     // allow raw types and npe risk as test will fail loudly
-    final Map response = restTemplate.getForEntity("/availableSlots", Map.class).getBody();
-    return (Integer) requireNonNull(response).getOrDefault(type.name(), 0);
+    final Map response = restTemplate
+        .getForEntity("/availableSlots/" + powerSupply, Map.class)
+        .getBody();
+    return (Integer) requireNonNull(response).getOrDefault(powerSupply.name(), 0);
   }
 
 }

@@ -17,6 +17,6 @@ public class ParkingSlot {
   @GeneratedValue(strategy = GenerationType.AUTO)
   Long id;
   @Enumerated(EnumType.STRING)
-  private PowerSupply type;
+  private PowerSupply powerSupply;
   private Boolean taken;
 }

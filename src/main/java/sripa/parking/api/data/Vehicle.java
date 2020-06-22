@@ -14,5 +14,5 @@ public class Vehicle {
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
   private String plates;
-  private PowerSupply type;
+  private PowerSupply powerSupply;
 }
